@@ -532,6 +532,14 @@
 .. _`Memfault: Collecting Device Metrics`: https://docs.memfault.com/docs/embedded/metrics-api
 .. _`Memfault: Error Tracking with Trace Events`: https://docs.memfault.com/docs/embedded/trace-events/
 
+.. ### Source: nrfcloud.com
+
+.. _`nRF Cloud`: https://nrfcloud.com
+.. _`nRF Cloud documentation`: https://nrfcloud.com/#/docs
+.. _`nRF Cloud Patch Device State`: https://api.nrfcloud.com/v1#operation/UpdateDeviceState
+.. _`nRF Cloud Device API`: https://api.nrfcloud.com/v1
+.. _`nRF Cloud Location Services`: https://api.nrfcloud.com/v1#tag/Location-Services
+
 .. ### Source: other
 
 .. _`Pelion Device Management Portal`: https://portal.mbedcloud.com/login
@@ -548,16 +556,6 @@
 
 .. _`nRF Mesh mobile app for iOS`: https://apps.apple.com/us/app/nrf-mesh/id1380726771
 .. _`nRF Mesh mobile app for Android`: https://play.google.com/store/apps/details?id=no.nordicsemi.android.nrfmeshprovisioner
-
-.. _`nRF Cloud`: https://nrfcloud.com
-
-.. _`nRF Cloud documentation`: https://nrfcloud.com/#/docs
-
-.. _`nRF Cloud Patch Device State`: https://api.nrfcloud.com/v1#operation/UpdateDeviceState
-
-.. _`nRF Cloud Device API`: https://api.nrfcloud.com/v1
-
-.. _`nRF Cloud Location Services`: https://api.nrfcloud.com/v1#tag/Location-Services
 
 .. _`NFC Forum specification overview`: https://nfc-forum.org/our-work/specification-releases/specifications/
 .. _`Bluetooth Secure Simple Pairing Using NFC`: https://nfc-forum.org/our-work/specification-releases/specifications/#010ea0b1006cf5b44
