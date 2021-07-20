@@ -33,7 +33,7 @@
 #include <caf/events/module_state_event.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(MODULE, CONFIG_DESKTOP_HID_STATE_LOG_LEVEL);
+LOG_MODULE_REGISTER(MODULE, 4);
 
 
 /**@brief Module state. */
@@ -106,7 +106,6 @@ struct report_data {
 	struct items items;
 	struct eventq eventq;
 	struct axis_data axes;
-	bool update_needed;
 	struct report_state *linked_rs;
 };
 
@@ -116,6 +115,7 @@ struct report_state {
 	uint8_t report_id;
 	struct subscriber *subscriber;
 	struct report_data *linked_rd;
+	bool update_needed;
 };
 
 struct subscriber {
@@ -429,7 +429,7 @@ static void clear_report_data(struct report_data *rd)
 	clear_items(&rd->items);
 	eventq_reset(&rd->eventq);
 
-	rd->update_needed = false;
+	rd->linked_rs->update_needed = false;
 }
 
 static struct report_state *get_report_state(struct subscriber *subscriber,
@@ -598,7 +598,7 @@ static void send_report_keyboard(uint8_t report_id, struct report_data *rd)
 
 	EVENT_SUBMIT(event);
 
-	rd->update_needed = false;
+	rd->linked_rs->update_needed = false;
 }
 
 static void send_report_mouse(uint8_t report_id, struct report_data *rd)
@@ -668,9 +668,9 @@ static void send_report_mouse(uint8_t report_id, struct report_data *rd)
 	    (rd->axes.axis[MOUSE_REPORT_AXIS_WHEEL]  < -1) ||
 	    (rd->axes.axis[MOUSE_REPORT_AXIS_WHEEL]  > 1)) {
 		/* If there is some axis data to send, request report update. */
-		rd->update_needed = true;
+		rd->linked_rs->update_needed = true;
 	} else {
-		rd->update_needed = false;
+		rd->linked_rs->update_needed = false;
 	}
 }
 
@@ -724,9 +724,9 @@ static void send_report_boot_mouse(uint8_t report_id, struct report_data *rd)
 	if ((rd->axes.axis[MOUSE_REPORT_AXIS_X] != 0) ||
 	    (rd->axes.axis[MOUSE_REPORT_AXIS_Y] != 0)) {
 		/* If there is some axis data to send, request report update. */
-		rd->update_needed = true;
+		rd->linked_rs->update_needed = true;
 	} else {
-		rd->update_needed = false;
+		rd->linked_rs->update_needed = false;
 	}
 }
 
@@ -762,7 +762,7 @@ static void send_report_ctrl(uint8_t report_id, struct report_data *rd)
 
 	EVENT_SUBMIT(event);
 
-	rd->update_needed = false;
+	rd->linked_rs->update_needed = false;
 }
 
 static bool update_report(struct report_data *rd)
@@ -779,7 +779,7 @@ static bool update_report(struct report_data *rd)
 					      event->item.usage_id,
 					      event->item.value);
 
-		rd->update_needed = rd->update_needed || update_needed;
+		rd->linked_rs->update_needed = rd->linked_rs->update_needed || update_needed;
 
 
 		k_free(event);
@@ -787,7 +787,7 @@ static bool update_report(struct report_data *rd)
 		/* If no item was changed, try next event. */
 	}
 
-	if (rd->update_needed) {
+	if (rd->linked_rs->update_needed) {
 		update_needed = true;
 	}
 
@@ -865,7 +865,7 @@ static bool report_send(struct report_data *rd, bool check_state, bool send_alwa
 
 	/* Ensure that report marked as send_always will be sent. */
 	if (send_always && !report_sent) {
-		rd->update_needed = true;
+		rs->update_needed = true;
 	}
 
 	return report_sent;
@@ -1021,6 +1021,12 @@ static void connect(const void *subscriber_id, uint8_t report_id)
 			LOG_WRN("Force report data unlink");
 			rd->linked_rs = NULL;
 			clear_report_data(rd);
+
+			struct report_data *empty_rd;
+			clear_report_data(empty_rd);
+			rs->linked_rd = empty_rd;
+			report_send(empty_rd, false, true);
+			
 		}
 	}
 
@@ -1200,7 +1206,7 @@ static void update_key(const struct hid_keymap *map, int16_t value)
 	} else {
 		/* Update state and issue report generation event. */
 		if (key_value_set(&rd->items, map->usage_id, value)) {
-			rd->update_needed = true;
+			rd->linked_rs->update_needed = true;
 			report_send(rd, false, true);
 		}
 	}
@@ -1295,7 +1301,7 @@ static bool handle_motion_event(const struct motion_event *event)
 
 	rd->axes.axis[MOUSE_REPORT_AXIS_X] += event->dx;
 	rd->axes.axis[MOUSE_REPORT_AXIS_Y] += event->dy;
-	rd->update_needed = true;
+	rd->linked_rs->update_needed = true;
 
 	report_send(rd, true, true);
 
@@ -1311,7 +1317,7 @@ static bool handle_wheel_event(const struct wheel_event *event)
 	struct report_data *rd = get_report_data(REPORT_ID_MOUSE);
 
 	rd->axes.axis[MOUSE_REPORT_AXIS_WHEEL] += event->wheel;
-	rd->update_needed = true;
+	rd->linked_rs->update_needed = true;
 
 	report_send(rd, true, true);
 
