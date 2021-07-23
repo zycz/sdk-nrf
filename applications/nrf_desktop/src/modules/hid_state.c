@@ -33,7 +33,7 @@
 #include <caf/events/module_state_event.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(MODULE, 4);
+LOG_MODULE_REGISTER(MODULE, CONFIG_DESKTOP_HID_STATE_LOG_LEVEL);
 
 
 /**@brief Module state. */
@@ -426,12 +426,8 @@ static void clear_report_data(struct report_data *rd)
 	LOG_INF("Clear report data (%p)", (void *)rd);
 
 	clear_axes(&rd->axes);
-	LOG_INF("Clear report data after clear_axes (%p)", (void *)rd);
 	clear_items(&rd->items);
-	LOG_INF("Clear report data after clear_items (%p)", (void *)rd);
 	eventq_reset(&rd->eventq);
-
-	//rd->linked_rs->update_needed = false;
 }
 
 static struct report_state *get_report_state(struct subscriber *subscriber,
@@ -641,6 +637,7 @@ static void send_report_mouse(uint8_t report_id, struct report_data *rd)
 		}
 	}
 
+
 	/* Encode report. */
 	BUILD_ASSERT(REPORT_SIZE_MOUSE == 5, "Invalid report size");
 
@@ -816,6 +813,7 @@ static bool report_send(struct report_data *rd, bool check_state, bool send_alwa
 		} else {
 			pipeline_depth = 2;
 		}
+
 		while ((rs->cnt < pipeline_depth) &&
 		       (rs->subscriber->report_cnt < rs->subscriber->report_max) &&
 		       (update_report(rd) || send_always)) {
@@ -1010,8 +1008,6 @@ static void connect(const void *subscriber_id, uint8_t report_id)
 	struct report_data *rd = get_report_data(report_data_id);
 
 	rs->linked_rd = rd;
-
-	LOG_DBG("connect, rd: %d, rs: %d ", report_data_id, report_id );
 
 	if (rd->linked_rs) {
 		__ASSERT_NO_MSG(rd->linked_rs != rs);
