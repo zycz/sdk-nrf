@@ -612,7 +612,6 @@ static void send_report_mouse(uint8_t report_id, struct report_data *rd)
 		__ASSERT_NO_MSG(false);
 		return;
 	}
-	LOG_WRN("In rsend_report_mouse 1 report_id: %d", report_id);
 
 	/* X/Y axis */
 	int16_t dx = MAX(MIN(rd->axes.axis[MOUSE_REPORT_AXIS_X], MOUSE_REPORT_XY_MAX),
@@ -642,8 +641,6 @@ static void send_report_mouse(uint8_t report_id, struct report_data *rd)
 		}
 	}
 
-	LOG_WRN("In rsend_report_mouse 2 dx: %d", dx);
-
 	/* Encode report. */
 	BUILD_ASSERT(REPORT_SIZE_MOUSE == 5, "Invalid report size");
 
@@ -664,7 +661,6 @@ static void send_report_mouse(uint8_t report_id, struct report_data *rd)
 	event->dyndata.data[3] = x_buff[0];
 	event->dyndata.data[4] = (y_buff[0] << 4) | (x_buff[1] & 0x0f);
 	event->dyndata.data[5] = (y_buff[1] << 4) | (y_buff[0] >> 4);
-	LOG_WRN("In rsend_report_mouse 3 ");
 
 	EVENT_SUBMIT(event);
 
@@ -773,7 +769,6 @@ static void send_report_ctrl(uint8_t report_id, struct report_data *rd)
 static bool update_report(struct report_data *rd)
 {
 	bool update_needed = false;
-//	LOG_DBG("Update raport");
 
 	while (!update_needed && !eventq_is_empty(&rd->eventq)) {
 		/* There are enqueued events to handle. */
@@ -821,7 +816,6 @@ static bool report_send(struct report_data *rd, bool check_state, bool send_alwa
 		} else {
 			pipeline_depth = 2;
 		}
-		LOG_WRN("In report send pipline depth: %d", pipeline_depth);
 		while ((rs->cnt < pipeline_depth) &&
 		       (rs->subscriber->report_cnt < rs->subscriber->report_max) &&
 		       (update_report(rd) || send_always)) {
@@ -1027,19 +1021,21 @@ static void connect(const void *subscriber_id, uint8_t report_id)
 
 		if (cur_sub_prio < new_sub_prio) {
 			LOG_WRN("Force report data unlink");
+			struct report_state *temp_rs = rd->linked_rs;
 			rd->linked_rs = NULL;
 			clear_report_data(rd);
 
-			struct report_data empty_rd;
-			//clear_report_data(&empty_rd);
-			clear_axes(&empty_rd.axes);
-			clear_items(&empty_rd.items);
-			empty_rd.linked_rs = rd->linked_rs;
-			rs->update_needed = false;
-			rs->linked_rd = &empty_rd;
-			LOG_WRN("befor sending empty message");
-			report_send(&empty_rd, false, true);
-			
+			/*  We create and send empty report to clear possible data (for example mouse button) set 
+			before switching to other subscriber */
+			struct report_data empty_rd={0};
+			sys_slist_init(&empty_rd.eventq.root);
+			clear_report_data(&empty_rd);
+			empty_rd.items.item_count_max=1;
+			empty_rd.linked_rs = temp_rs;
+			temp_rs->update_needed = false;
+			temp_rs->linked_rd = &empty_rd;
+			report_send(&empty_rd, true, true);
+			temp_rs->linked_rd = rd;
 		}
 	}
 
