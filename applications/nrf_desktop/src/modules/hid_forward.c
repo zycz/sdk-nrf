@@ -444,8 +444,11 @@ static enum bt_hids_pm get_sub_protocol_mode(const struct subscriber *sub)
 {
 	if (is_report_enabled(sub, REPORT_ID_BOOT_MOUSE) ||
 	    is_report_enabled(sub, REPORT_ID_BOOT_KEYBOARD)) {
+		LOG_INF("get_sub_protocol_mode BOOT");
+
 		return BT_HIDS_PM_BOOT;
 	} else {
+		LOG_INF("get_sub_protocol_mode REPORT");
 		return BT_HIDS_PM_REPORT;
 	}
 }
