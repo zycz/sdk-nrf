@@ -888,7 +888,9 @@ static bool handle_ble_peer_event(const struct ble_peer_event *event)
 				    (state != STATE_OFF)) {
 					LOG_INF("Bonded peer power off, force system power down");
 					update_state(STATE_OFF);
-					force_power_down();
+					if (IS_ENABLED(CONFIG_CAF_FORCE_POWER_DOWN_EVENTS)) {
+						force_power_down();
+					}
 				}
 			}
 		}
