@@ -9,20 +9,20 @@ menuconfig DESKTOP_DFU_MCUMGR_ENABLE
 	select EXPERIMENTAL
 	select CAF_BLE_SMP_TRANSFER_EVENTS if MCUMGR_TRANSPORT_BT
 	select MCUMGR
-	select MCUMGR_GRP_IMG
+	# select MCUMGR_GRP_IMG
 	select MCUMGR_GRP_OS
 	select MCUMGR_MGMT_NOTIFICATION_HOOKS
 	select MCUMGR_GRP_IMG_MUTEX if DESKTOP_DFU_LOCK
 	select MCUMGR_SMP_COMMAND_STATUS_HOOKS
-	select NET_BUF
-	select ZCBOR
-	select CRC
-	select IMG_MANAGER
-	select MCUBOOT_BOOTUTIL_LIB
-	select STREAM_FLASH
-	select FLASH_MAP
-	select FLASH
-	depends on BOOTLOADER_MCUBOOT
+	# select NET_BUF
+	# select ZCBOR
+	# select CRC
+	# select IMG_MANAGER
+	# select MCUBOOT_BOOTUTIL_LIB
+	# select STREAM_FLASH
+	# select FLASH_MAP
+	# select FLASH
+	depends on BOOTLOADER_MCUBOOT || SUIT
 	help
 	  This option enables an alternative method of performing DFU using the
 	  MCUmgr module.
