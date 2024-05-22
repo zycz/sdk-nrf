@@ -8,10 +8,13 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
-#include <zephyr/sys/math_extras.h>
-
+#include <zephyr/sys/atomic.h>
 #include <app_event_manager.h>
+
+#if defined(CONFIG_DESKTOP_DFU_MCUMGR_ENABLE)
+#include <zephyr/sys/math_extras.h>
 #include "dfu_lock.h"
+#endif
 
 #define MODULE dfu_mcumgr
 #include <caf/events/module_state_event.h>
@@ -20,6 +23,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MODULE, CONFIG_DESKTOP_DFU_MCUMGR_LOG_LEVEL);
 
+#if defined(CONFIG_DESKTOP_DFU_MCUMGR_ENABLE)
 #define DFU_TIMEOUT	K_SECONDS(5)
 
 static struct k_work_delayable dfu_timeout;
@@ -105,6 +109,34 @@ static enum mgmt_cb_return smp_cmd_recv(uint32_t event, enum mgmt_cb_return prev
 	return MGMT_CB_OK;
 }
 
+#elif defined(CONFIG_DESKTOP_DFU_MCUMGR_SUIT_ENABLE)
+
+static atomic_t mcumgr_event_active = ATOMIC_INIT(false);
+
+/* nRF Desktop MCUmgr SUIT DFU module cannot be enabled together with
+ * CAF BLE SMP, Config Channel DFU or the nRF Desktop MCUmgr DFU (MCUboot) module. */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_CAF_BLE_SMP));
+BUILD_ASSERT(!IS_ENABLED(CONFIG_DESKTOP_CONFIG_CHANNEL_DFU_ENABLE));
+BUILD_ASSERT(!IS_ENABLED(CONFIG_DESKTOP_DFU_MCUMGR_ENABLE));
+
+static int32_t smp_cmd_recv(uint32_t event,
+			    int32_t rc,
+			    bool *abort_more,
+			    void *data,
+			    size_t data_size)
+{
+	LOG_DBG("MCUmgr SMP Command Recv Event");
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT) &&
+	    atomic_cas(&mcumgr_event_active, false, true)) {
+		APP_EVENT_SUBMIT(new_ble_smp_transfer_event());
+	}
+
+	return MGMT_ERR_EOK;
+}
+
+#endif /* CONFIG_DESKTOP_DFU_MCUMGR_SUIT_ENABLE */
+
 static struct mgmt_callback cmd_recv_cb = {
 	.callback = smp_cmd_recv,
 	.event_id = MGMT_EVT_OP_CMD_RECV,
@@ -127,16 +159,20 @@ static bool app_event_handler(const struct app_event_header *aeh)
 			cast_module_state_event(aeh);
 
 		if (check_state(event, MODULE_ID(main), MODULE_STATE_READY)) {
-			if (!IS_ENABLED(CONFIG_DESKTOP_DFU_MCUMGR_MCUBOOT_DIRECT_XIP)) {
-				int err = boot_write_img_confirmed();
+			if (IS_ENABLED(CONFIG_DESKTOP_DFU_MCUMGR_ENABLE)) {
+				if (!IS_ENABLED(CONFIG_DESKTOP_DFU_MCUMGR_MCUBOOT_DIRECT_XIP)) {
+					int err = boot_write_img_confirmed();
 
-				if (err) {
-					LOG_ERR("Cannot confirm a running image: %d", err);
+					if (err) {
+						LOG_ERR("Cannot confirm a running image: %d", err);
+					}
 				}
-			}
 
-			LOG_INF("MCUboot image version: %s", CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
-			k_work_init_delayable(&dfu_timeout, dfu_timeout_handler);
+				LOG_INF("MCUboot image version: %s", CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION);
+				k_work_init_delayable(&dfu_timeout, dfu_timeout_handler);
+			} else if (IS_ENABLED(CONFIG_DESKTOP_DFU_MCUMGR_SUIT_ENABLE)) {
+				LOG_INF("SUIT image version: %d", CONFIG_SUIT_ENVELOPE_SEQUENCE_NUM);
+			}
 
 			mgmt_callback_register(&cmd_recv_cb);
 		}
