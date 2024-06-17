@@ -39,7 +39,7 @@ zephyr_include_directories(
 
 # Application sources
 add_subdirectory(src/events)
-add_subdirectory(src/hw_interface)
+# add_subdirectory(src/hw_interface)
 add_subdirectory(src/modules)
 add_subdirectory(src/util)
 
