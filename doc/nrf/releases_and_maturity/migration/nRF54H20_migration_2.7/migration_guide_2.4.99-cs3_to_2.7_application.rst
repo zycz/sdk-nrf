@@ -74,6 +74,38 @@ General
 
      The previously used SOC1-based board files have been removed.
 
+nRF Desktop
+-----------
+
+You need to make the following changes for :ref:`nrf_desktop` application to work in the same way as in the release v2.4.99-cs3.
+
+* Due to the migration to the new hardware model, commonly referred as "hardware model v2", the board target of the nRF54H20 DK has changed to ``nrf54h20dk/nrf54h20/cpuapp``.
+  The build command for the application has changed and it is now:
+
+  .. code-block:: console
+
+    west build -b nrf54h20dk/nrf54h20/cpuapp
+
+* The :ref:`ipc_radio` image serves purpose as universal network core image for hci_ipc rpc_host and IEEE 802.15.4 remote image.
+  Due to that radio core now uses the :ref:`ipc_radio` application from ``sdk-nrf`` instead of the :ref:`zephyr:bluetooth-hci-ipc-sample` sample from ``sdk-zephyr``.
+  Radio core image configuration files have been moved from :file:`configuration/nrf54h20dk_nrf54h20_cpuapp/child_image/hci_rpmsg` to :file:`configuration/nrf54h20dk_nrf54h20_cpurad/images/ipc_radio` directory.
+* Due to transition to sysbuild, the configuration enabling the radio core image has been moved from the main application image configuration to the sysbuild configuration.
+  See the following sysbuild Kconfig options related to the radio core image configuration:
+
+    * ``SB_CONFIG_NRF_DEFAULT_IPC_RADIO``
+    * ``SB_CONFIG_NETCORE_IPC_RADIO_BT_HCI_IPC``
+
+* The :file:`dfu_mcumgr_suit.c` module has been merged with :file:`dfu_mcumgr.c`.
+  The ``CONFIG_DESKTOP_DFU_MCUMGR_SUIT_ENABLE`` Kconfig option had been removed and replaced by :ref:`CONFIG_DESKTOP_DFU_BACKEND_SUIT <config_desktop_app_options>`.
+  The :file:`dfu_mcumgr_suit.c` is no longer needed as in |NCS| v2.7 the dfu_mcumgr module can be properly adapted to support the SUIT DFU.
+* The USB High-Speed is supported only in the USB next stack.
+  New USB next stack has been integrated into the nRF Desktop application and can be enabled using the :kconfig:option:`CONFIG_DESKTOP_USB_STACK_NEXT` Kconfig option.
+  It is now enabled by default in the nRF54H20 DK configurations.
+  An USB HID-class instance is now configured through a separate DTS node compatible with ``zephyr,hid-device``.
+  See :ref:`nrf_desktop_usb_state` documentation for details related to USB-next stack integration.
+* Align flash writes in the :ref:`nrf_desktop_dfu` to the flash write block size of the non-volatile memory.
+  This is needed because the :ref:`CONFIG_SOC_FLASH_NRF_MRAM_ONE_BYTE_WRITE_ACCESS <config_desktop_app_options>` Kconfig option is no longer available and MRAMC requiers writes of the size of the whole MRAM word to the MRAM.
+
 Security
 ========
 
