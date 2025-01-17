@@ -35,15 +35,142 @@ static void icache_profiling_print(void)
 
 int main(void)
 {
-	unsigned int cnt = 0;
+// 	unsigned int cnt = 0;
 
-#if defined CONFIG_FIRST_SLEEP_OFFSET
-	k_msleep(1000);
-#endif
+// #if defined CONFIG_FIRST_SLEEP_OFFSET
+// 	k_msleep(1000);
+// #endif
 
 	LOG_INF("Multicore idle test on %s", CONFIG_BOARD_TARGET);
-	while (1) {
-		LOG_INF("Multicore idle test iteration %u", cnt++);
+// 	while (1) {
+// 		LOG_INF("Multicore idle test iteration %u", cnt++);
+// 		k_msleep(2000);
+// 	}
+
+	icache_profiling_init();
+	icache_profiling_print();
+
+	while (1)
+	{
+		LOG_INF("Multicore idle test on %s", CONFIG_BOARD_TARGET);
+		icache_profiling_print();
+
+		for(int i = 0; i < 100; i++)
+		{
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+			__asm__ volatile ("nop");
+
+			LOG_INF("Multicore idle test after 100 nops, interation: %d", i);
+			icache_profiling_print();
+		}
 		k_msleep(2000);
 	}
 
