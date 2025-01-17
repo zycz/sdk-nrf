@@ -8,7 +8,30 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
+#include <nrfx.h>
+#include <hal/nrf_cache.h>
+
 LOG_MODULE_REGISTER(idle);
+
+static void icache_profiling_init(void)
+{
+	if (IS_ENABLED(CONFIG_CACHE_NRF_CACHE)) {
+		nrf_cache_profiling_set(NRF_ICACHE, true);
+		nrf_cache_profiling_counters_clear(NRF_ICACHE);
+	}
+}
+
+static void icache_profiling_print(void)
+{
+	if (IS_ENABLED(CONFIG_CACHE_NRF_CACHE)) {
+		uint32_t icache_hit = nrf_cache_instruction_hit_counter_get(NRF_ICACHE,
+									      NRF_CACHE_REGION_FLASH);
+		uint32_t icache_miss = nrf_cache_instruction_miss_counter_get(NRF_ICACHE,
+										NRF_CACHE_REGION_FLASH);
+
+		LOG_INF("ICache hits: %u, misses: %u", icache_hit, icache_miss);
+	}
+}
 
 int main(void)
 {
