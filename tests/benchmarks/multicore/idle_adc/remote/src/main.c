@@ -8,10 +8,10 @@
 
 int main(void)
 {
-	k_msleep(500);
-	while (1) {
-		k_msleep(2000);
-	}
+	// k_msleep(500);
+	// while (1) {
+	// 	k_msleep(2000);
+	// }
 
 	return 0;
 }

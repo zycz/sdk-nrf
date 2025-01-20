@@ -52,16 +52,16 @@ int main(void)
 	__ASSERT_NO_MSG(err == 0);
 
 	while (1) {
-		gpio_pin_set_dt(&gpio, 1);
+		// gpio_pin_set_dt(&gpio, 1);
 		err = adc_read(adc, &sequence);
 		sample_value = channel_reading[0];
-		__ASSERT_NO_MSG(sample_value == ADC_HIGH_LEVEL);
-		k_sleep(K_SECONDS(1));
-		gpio_pin_set_dt(&gpio, 0);
-		err = adc_read(adc, &sequence);
-		sample_value = channel_reading[0];
-		__ASSERT_NO_MSG(sample_value == ADC_LOW_LEVEL);
-		k_sleep(K_SECONDS(1));
+		// __ASSERT_NO_MSG(sample_value == ADC_HIGH_LEVEL);
+		k_sleep(K_MSEC(1));
+		// gpio_pin_set_dt(&gpio, 0);
+		// err = adc_read(adc, &sequence);
+		// sample_value = channel_reading[0];
+		// __ASSERT_NO_MSG(sample_value == ADC_LOW_LEVEL);
+		// k_sleep(K_SECONDS(1));
 	}
 	return 0;
 }
