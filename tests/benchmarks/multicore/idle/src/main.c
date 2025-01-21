@@ -5,23 +5,21 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#include <zephyr/logging/log.h>
+#include <hal/nrf_gpio.h>
 
-LOG_MODULE_REGISTER(idle);
+
 
 int main(void)
 {
-	unsigned int cnt = 0;
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 3));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 3));
 
-#if defined CONFIG_FIRST_SLEEP_OFFSET
-	k_msleep(1000);
-#endif
-
-	LOG_INF("Multicore idle test on %s", CONFIG_BOARD_TARGET);
 	while (1) {
-		LOG_INF("Multicore idle test iteration %u", cnt++);
+
+		nrf_gpio_pin_set(NRF_GPIO_PIN_MAP(1, 3));
 		k_msleep(2000);
+		// nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 3));
+		// k_busy_wait(100000);
 	}
 
 	return 0;
