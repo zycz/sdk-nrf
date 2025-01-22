@@ -33,7 +33,7 @@ int main(void)
 
 	/* Options for the sequence sampling. */
 	const struct adc_sequence_options options = {
-		.extra_samplings = 1,
+		.extra_samplings = 0,
 		.interval_us = 0,
 	};
 
@@ -41,7 +41,7 @@ int main(void)
 		.buffer = channel_reading,
 		/* buffer size in bytes, not number of samples */
 		.buffer_size = sizeof(channel_reading),
-		.resolution = 12,
+		.resolution = 10,
 		.options = &options,
 		.channels = 1,
 	};
