@@ -7,6 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/policy.h>
+
 #define ADC_NODE DT_ALIAS(adc0)
 #define ADC_LOW_LEVEL 0
 #define ADC_HIGH_LEVEL 4092
@@ -50,6 +52,9 @@ int main(void)
 	__ASSERT_NO_MSG(err == 0);
 	err = adc_setup();
 	__ASSERT_NO_MSG(err == 0);
+
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 
 	while (1) {
 		// gpio_pin_set_dt(&gpio, 1);
