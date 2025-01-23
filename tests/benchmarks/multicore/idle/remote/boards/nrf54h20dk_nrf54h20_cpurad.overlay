@@ -1,0 +1,33 @@
+
+// &cpuapp_cpurad_ram0x_region{
+// 	status = "disabled";
+// };
+
+// &dppic020 {
+// 	status = "disabled";
+// };
+
+// &cpurad_ipct {
+// 	status = "disabled";
+// };
+
+// &bt_hci_sdc {
+// 	status = "disabled";
+// };
+
+// &ipct130 {
+// 	status = "disabled";
+// };
+
+// &dppic130 {
+// 	status = "disabled";
+// };
+
+// &dppic132 {
+// 	status = "disabled";
+// };
+
+// &cpurad_ram0 {
+// 	reg = < 0x23000000 0x10000 >;
+// 	ranges = < 0x0 0x23000000 0x10000 >;
+// };
