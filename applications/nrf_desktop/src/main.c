@@ -36,5 +36,13 @@ int main(void)
 	} else {
 		module_set_state(MODULE_STATE_READY);
 	}
+
+	int64_t next_timeout = k_uptime_get();
+
+	while (true) {
+		k_busy_wait(15);
+		next_timeout += 250;
+		k_sleep(K_TIMEOUT_ABS_US(next_timeout));
+	}
 	return 0;
 }
