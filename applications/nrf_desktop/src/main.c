@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(MODULE);
 #include <hal/nrf_gpio.h>
+#include <zephyr/pm/policy.h>
 
 static void gpio_init(void)
 {
@@ -25,6 +26,10 @@ static void gpio_init(void)
 
 int main(void)
 {
+
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+
 	gpio_init();
 	if (app_event_manager_init()) {
 		LOG_ERR("Application Event Manager not initialized");
