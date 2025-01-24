@@ -96,11 +96,18 @@ int main(void)
 	while (true) {
 
 		i++;
-		if (i == 10) {
+		if (i == 4) {
 			i = 0;
+			// nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 3));
 			nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 3));
 			ret = ipc_service_send(&ep, message, sizeof(message));
 			nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 4));
+			// nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 4));
+			// for (volatile size_t i = 0; i < 50; i++);
+			// {
+			// 	// nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 3));
+			// }
+			// nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 4));
 			if (ret == -ENOMEM) {
 				/* No space in the buffer. Retry. */
 				k_busy_wait(10000);
@@ -111,9 +118,9 @@ int main(void)
 		}
 
 
-
-		next_timeout += 1;
-		k_sleep(K_TIMEOUT_ABS_MS(next_timeout));
+		k_busy_wait(150);
+		next_timeout += 250;
+		k_sleep(K_TIMEOUT_ABS_US(next_timeout));
 
 	}
 
