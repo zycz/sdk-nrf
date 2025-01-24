@@ -14,9 +14,29 @@
 		in-polling-period-us = <125>;
 		in-report-size = <64>;
 	};
+
+	test_gpio {
+		compatible = "gpio-keys";
+		test3: test3 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+		test4: test4 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		};
+		test5: test5 {
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 /* For nRF54H, watchdog status is disabled by default. Needs to be enabled in DTS overlay. */
 &wdt010 {
 	status = "okay";
+};
+
+&gpio1 {
+    status = "okay";
+};
+&gpiote130 {
+    status = "okay";
 };
