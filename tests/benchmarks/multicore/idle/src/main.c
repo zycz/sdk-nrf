@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(idle);
 
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/pm/policy.h>
+#include <hal/nrf_gpio.h>
 
 static K_SEM_DEFINE(bound_sem, 0, 1);
 
@@ -36,14 +37,26 @@ static struct ipc_ept_cfg ep_cfg = {
 	},
 };
 
+static void gpio_init(void)
+{
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 3));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 3));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 4));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 4));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 5));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 5));
 
-static uint8_t message[100];
+}
+
+
+static uint8_t message[4];
 
 int main(void)
 {
 
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	gpio_init();
 
 #if 1
 	const struct device *ipc0_instance;
@@ -85,9 +98,12 @@ int main(void)
 		i++;
 		if (i == 10) {
 			i = 0;
+			nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 3));
 			ret = ipc_service_send(&ep, message, sizeof(message));
+			nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 4));
 			if (ret == -ENOMEM) {
 				/* No space in the buffer. Retry. */
+				k_busy_wait(10000);
 				continue;
 			} else if (ret < 0) {
 				while (true);

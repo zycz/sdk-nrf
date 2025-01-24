@@ -16,6 +16,7 @@ extern sys_snode_t soc_node;
 
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/pm/policy.h>
+#include <hal/nrf_gpio.h>
 
 
 static K_SEM_DEFINE(bound_sem, 0, 1);
@@ -28,6 +29,7 @@ static void ep_bound(void *priv)
 static void ep_recv(const void *data, size_t len, void *priv)
 {
 	// k_busy_wait(100);
+	nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 1));
 
 }
 
@@ -40,7 +42,16 @@ static struct ipc_ept_cfg ep_cfg = {
 };
 
 
+static void gpio_init(void)
+{
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 0));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 0));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 1));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 1));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 2));
+	nrf_gpio_pin_clear(NRF_GPIO_PIN_MAP(1, 2));
 
+}
 
 
 static uint8_t message[10];
@@ -52,6 +63,8 @@ int main(void)
 	soc_lrcconf_poweron_release(&soc_node, NRF_LRCCONF_POWER_DOMAIN_0);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+
+	gpio_init();
 
 #if 1
 	const struct device *ipc0_instance;

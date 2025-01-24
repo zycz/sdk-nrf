@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+ / {
+	test_gpio {
+		compatible = "gpio-keys";
+		test3: test3 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		};
+		test4: test4 {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		};
+		test5: test5 {
+			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+&gpio1 {
+    status = "okay";
+};
+&gpiote130 {
+    status = "okay";
+};

@@ -31,3 +31,25 @@
 // 	reg = < 0x23000000 0x10000 >;
 // 	ranges = < 0x0 0x23000000 0x10000 >;
 // };
+
+
+/ {
+	test_gpio {
+		compatible = "gpio-keys";
+		test0: test0 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+                test1: test1 {
+                        gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+                };
+                test2: test2 {
+                        gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+                };
+	};
+};
+&gpio1 {
+    status = "okay";
+};
+&gpiote130 {
+    status = "okay";
+};
