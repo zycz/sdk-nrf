@@ -187,6 +187,7 @@ int main(void)
 	main_thread_priority_cooperative_set();
 
 	LOG_INF("CoreMark sample for %s", CONFIG_BOARD_TARGET);
+	LOG_ERR("Miłego dnia Jurku :)");
 
 	if (IS_ENABLED(CONFIG_APP_MODE_FLASH_AND_RUN)) {
 		(void)atomic_set(&coremark_in_progress, true);
