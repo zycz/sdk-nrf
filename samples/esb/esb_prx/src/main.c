@@ -50,14 +50,22 @@ void event_handler(struct esb_evt const *event)
 		break;
 	case ESB_EVENT_RX_RECEIVED:
 		if (esb_read_rx_payload(&rx_payload) == 0) {
-			LOG_DBG("Packet received, len %d : "
-				"0x%02x, 0x%02x, 0x%02x, 0x%02x, "
-				"0x%02x, 0x%02x, 0x%02x, 0x%02x",
-				rx_payload.length, rx_payload.data[0],
-				rx_payload.data[1], rx_payload.data[2],
-				rx_payload.data[3], rx_payload.data[4],
-				rx_payload.data[5], rx_payload.data[6],
-				rx_payload.data[7]);
+			static int i = 0;
+			i++;
+			if (i == 1000)
+			{
+				i = 0;
+				LOG_DBG("Packet received, len %d : "
+					"0x%02x, 0x%02x, 0x%02x, 0x%02x, "
+					"0x%02x, 0x%02x, 0x%02x, 0x%02x",
+					rx_payload.length, rx_payload.data[0],
+					rx_payload.data[1], rx_payload.data[2],
+					rx_payload.data[3], rx_payload.data[4],
+					rx_payload.data[5], rx_payload.data[6],
+					rx_payload.data[7]);
+			}
+			
+
 
 			leds_update(rx_payload.data[1]);
 		} else {

@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(esb_ptx, CONFIG_ESB_PTX_APP_LOG_LEVEL);
 static bool ready = true;
 static struct esb_payload rx_payload;
 static struct esb_payload tx_payload = ESB_CREATE_PAYLOAD(0,
-	0x01, 0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08);
+	0x01, 0x00, 0x00, 0x04, 0x05, 0x06, 0x07, 0x08);
 
 #define _RADIO_SHORTS_COMMON                                                   \
 	(RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_END_DISABLE_Msk |         \
@@ -47,14 +47,14 @@ void event_handler(struct esb_evt const *event)
 		break;
 	case ESB_EVENT_RX_RECEIVED:
 		while (esb_read_rx_payload(&rx_payload) == 0) {
-			LOG_DBG("Packet received, len %d : "
-				"0x%02x, 0x%02x, 0x%02x, 0x%02x, "
-				"0x%02x, 0x%02x, 0x%02x, 0x%02x",
-				rx_payload.length, rx_payload.data[0],
-				rx_payload.data[1], rx_payload.data[2],
-				rx_payload.data[3], rx_payload.data[4],
-				rx_payload.data[5], rx_payload.data[6],
-				rx_payload.data[7]);
+			// LOG_DBG("Packet received, len %d : "
+			// 	"0x%02x, 0x%02x, 0x%02x, 0x%02x, "
+			// 	"0x%02x, 0x%02x, 0x%02x, 0x%02x",
+			// 	rx_payload.length, rx_payload.data[0],
+			// 	rx_payload.data[1], rx_payload.data[2],
+			// 	rx_payload.data[3], rx_payload.data[4],
+			// 	rx_payload.data[5], rx_payload.data[6],
+			// 	rx_payload.data[7]);
 		}
 		break;
 	}
@@ -232,7 +232,10 @@ int main(void)
 				LOG_ERR("Payload write failed, err %d", err);
 			}
 			tx_payload.data[1]++;
+			if (tx_payload.data[1] == 0x00) {
+				tx_payload.data[2]++;
+			}
 		}
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(1));
 	}
 }

@@ -29,4 +29,14 @@ if(SB_CONFIG_SOC_NRF5340_CPUNET)
   set(CPUAPP_PM_DOMAIN_DYNAMIC_PARTITION empty_app_core CACHE INTERNAL "")
 endif()
 
+if(SB_CONFIG_SOC_NRF54H20_CPURAD)
+  # Add remote project
+  ExternalZephyrProject_Add(
+      APPLICATION remote
+      SOURCE_DIR ${APP_DIR}/remote
+      BOARD "${BOARD}/nrf54h20/cpuapp"
+      BOARD_REVISION ${BOARD_REVISION}
+    )
+endif()
+
 set_property(GLOBAL PROPERTY PM_DOMAINS ${PM_DOMAINS})
