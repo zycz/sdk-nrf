@@ -220,7 +220,7 @@ int main(void)
 	LOG_INF("Initialization complete");
 	LOG_INF("Sending test packet");
 
-	tx_payload.noack = false;
+	tx_payload.noack = true;
 	while (1) {
 		if (ready) {
 			ready = false;
