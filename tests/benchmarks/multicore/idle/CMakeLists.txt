@@ -17,3 +17,7 @@ endif()
 project(idle)
 
 target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE src/fun1.c)
+target_include_directories(app PRIVATE src)
+
+zephyr_linker_sources(SECTIONS app_end.ld)

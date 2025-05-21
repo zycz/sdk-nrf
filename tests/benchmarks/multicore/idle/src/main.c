@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
+#include "fun1.h"
 
 LOG_MODULE_REGISTER(idle);
 
@@ -21,6 +22,7 @@ int main(void)
 	LOG_INF("Multicore idle test on %s", CONFIG_BOARD_TARGET);
 	while (1) {
 		LOG_INF("Multicore idle test iteration %u", cnt++);
+		fun1();
 		k_msleep(2000);
 	}
 
