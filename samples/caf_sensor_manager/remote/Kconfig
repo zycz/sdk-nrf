@@ -4,6 +4,18 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+config APP_PROVIDE_PM_HOOKS
+	bool "Application provides PM hooks"
+	default y
+	select HAS_PM
+	select HAS_POWEROFF
+
 menu "Sensor manager sample (remote core)"
 rsource "../src/modules/Kconfig"
 endmenu
