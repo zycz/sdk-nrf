@@ -12,6 +12,9 @@
 
 #include <zephyr/ipc/ipc_service.h>
 
+#include <hal/nrf_gpio.h>
+
+
 #ifdef CONFIG_TEST_EXTRA_STACK_SIZE
 #define STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #else
@@ -39,6 +42,8 @@ static void ep_bound(void *priv)
 
 static void ep_recv(const void *data, size_t len, void *priv)
 {
+	nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 4));
+
 	uint8_t received_val = *((uint8_t *)data);
 	static uint8_t expected_val;
 
@@ -86,6 +91,16 @@ K_THREAD_DEFINE(thread_check_id, STACKSIZE, check_task, NULL, NULL, NULL,
 
 int main(void)
 {
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 4));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 5));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 6));
+#else
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 2));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 3));
+	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 8));
+#endif
+
 	const struct device *ipc0_instance;
 	struct ipc_ept ep;
 	int ret;
@@ -126,6 +141,7 @@ int main(void)
 	k_thread_start(thread_check_id);
 
 	while (true) {
+		nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 2));
 		ret = ipc_service_send(&ep, p_payload, CONFIG_APP_IPC_SERVICE_MESSAGE_LEN);
 		if (ret == -ENOMEM) {
 			/* No space in the buffer. Retry. */
