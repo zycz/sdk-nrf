@@ -14,6 +14,75 @@
 
 #include <hal/nrf_gpio.h>
 
+struct payload {
+	unsigned long cnt;
+	unsigned long size;
+	uint8_t data[];
+};
+
+struct payload *p_payload;
+const struct device *ipc0_instance;
+struct ipc_ept ep;
+
+#if defined(CONFIG_SOC_NRF54H20_CPUAPP)
+
+#include <zephyr/drivers/gpio.h>
+
+#define BUTTON0_NODE	DT_ALIAS(sw0)
+#if !DT_NODE_HAS_STATUS(BUTTON0_NODE, okay)
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#endif
+
+static const struct gpio_dt_spec button0 = GPIO_DT_SPEC_GET_OR(BUTTON0_NODE, gpios, {0});
+static struct gpio_callback button0_cb_data;
+
+void button0_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 2));
+	ipc_service_send(&ep, p_payload, CONFIG_APP_IPC_SERVICE_MESSAGE_LEN);
+	p_payload->cnt++;
+}
+
+static int button0_init(void)
+{
+	int ret;
+
+	if (!device_is_ready(button0.port)) {
+		printk("Error: button device %s is not ready\n", button0.port->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&button0, GPIO_INPUT);
+	if (ret != 0) {
+		printk("Error %d: failed to configure %s pin %d\n",
+			   ret, button0.port->name, button0.pin);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&button0, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n",
+			   ret, button0.port->name, button0.pin);
+		return ret;
+	}
+
+	gpio_init_callback(&button0_cb_data, button0_pressed, BIT(button0.pin));
+	gpio_add_callback(button0.port, &button0_cb_data);
+
+	// printk("Set up button at %s pin %d\n", button0.port->name, button0.pin);
+
+	return 0;
+}
+
+/* Call button0_init() early in main() */
+// __attribute__((constructor))
+static void button0_setup_constructor(void)
+{
+	button0_init();
+}
+
+#endif /* CONFIG_SOC_NRF54H20_CPUAPP */
+
 
 #ifdef CONFIG_TEST_EXTRA_STACK_SIZE
 #define STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -25,13 +94,8 @@ K_THREAD_STACK_DEFINE(ipc0_stack, STACKSIZE);
 
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
-struct payload {
-	unsigned long cnt;
-	unsigned long size;
-	uint8_t data[];
-};
 
-struct payload *p_payload;
+
 
 static K_SEM_DEFINE(bound_sem, 0, 1);
 
@@ -75,7 +139,7 @@ static void check_task(void *arg1, void *arg2, void *arg3)
 	unsigned long delta;
 
 	while (1) {
-		k_sleep(K_MSEC(1000));
+		k_sleep(K_MSEC(100000));
 
 		delta = p_payload->cnt - last_cnt;
 
@@ -99,10 +163,10 @@ int main(void)
 	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 2));
 	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 3));
 	nrf_gpio_cfg_output(NRF_GPIO_PIN_MAP(1, 8));
+	button0_setup_constructor();
 #endif
 
-	const struct device *ipc0_instance;
-	struct ipc_ept ep;
+
 	int ret;
 
 	p_payload = (struct payload *) k_malloc(CONFIG_APP_IPC_SERVICE_MESSAGE_LEN);
@@ -137,32 +201,37 @@ int main(void)
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+	k_msleep(99999);
+#endif
+
 	k_sem_take(&bound_sem, K_FOREVER);
 	k_thread_start(thread_check_id);
 
 	while (true) {
-		nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 2));
-		ret = ipc_service_send(&ep, p_payload, CONFIG_APP_IPC_SERVICE_MESSAGE_LEN);
-		if (ret == -ENOMEM) {
-			/* No space in the buffer. Retry. */
-			continue;
-		} else if (ret < 0) {
-			printk("send_message(%ld) failed with ret %d\n", p_payload->cnt, ret);
-			break;
-		}
+		// nrf_gpio_pin_toggle(NRF_GPIO_PIN_MAP(1, 2));
+		// ret = ipc_service_send(&ep, p_payload, CONFIG_APP_IPC_SERVICE_MESSAGE_LEN);
+		// if (ret == -ENOMEM) {
+		// 	/* No space in the buffer. Retry. */
+		// 	continue;
+		// } else if (ret < 0) {
+		// 	printk("send_message(%ld) failed with ret %d\n", p_payload->cnt, ret);
+		// 	break;
+		// }
 
-		p_payload->cnt++;
+		// p_payload->cnt++;
 
 
 		/* Quasi minimal busy wait time which allows to continuously send
 		 * data without -ENOMEM error code. The purpose is to test max
 		 * throughput. Determined experimentally.
 		 */
-		if (CONFIG_APP_IPC_SERVICE_SEND_INTERVAL < 1000) {
-			k_busy_wait(CONFIG_APP_IPC_SERVICE_SEND_INTERVAL);
-		} else {
-			k_msleep(CONFIG_APP_IPC_SERVICE_SEND_INTERVAL/1000);
-		}
+		// if (CONFIG_APP_IPC_SERVICE_SEND_INTERVAL < 1000) {
+		// 	k_busy_wait(CONFIG_APP_IPC_SERVICE_SEND_INTERVAL);
+		// } else {
+			// k_msleep(CONFIG_APP_IPC_SERVICE_SEND_INTERVAL/1000);
+			k_msleep(99999);
+		// }
 	}
 
 	return 0;
