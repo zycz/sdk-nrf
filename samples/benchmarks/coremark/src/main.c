@@ -12,6 +12,7 @@
 #include <system_nrf.h>
 
 #include "coremark_zephyr.h"
+#include "ld_dvfs_handler.h"
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
@@ -185,6 +186,20 @@ int main(void)
 	 * Later we prefer cooperative priority to ensure no interference with the benchmark.
 	 */
 	main_thread_priority_cooperative_set();
+
+	k_msleep(1000);
+
+	int status = dvfs_service_handler_change_freq_setting(DVFS_FREQ_LOW);
+
+	if (status == -EAGAIN) {
+		LOG_WRN("DVFS not initialized, try again.");
+	} else if (status == -EBUSY) {
+		LOG_WRN("DVFS frequency change in progress");
+	} else if (status != 0) {
+		LOG_ERR("DVFS freq change returned with error: %d", status);
+	} else {
+		LOG_INF("Requesting frequency setting DVFS_FREQ_LOW");
+	}
 
 	LOG_INF("CoreMark sample for %s", CONFIG_BOARD_TARGET);
 
