@@ -52,3 +52,11 @@
 // 	portconfig = <0>;
 // 	etrbuffer = <&etr_buffer>;
 // };
+
+&gpio6 {
+	status = "disabled";
+};
+
+&exmif {
+	status = "disabled";
+};
