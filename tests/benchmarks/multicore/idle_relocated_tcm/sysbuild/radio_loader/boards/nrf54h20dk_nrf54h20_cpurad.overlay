@@ -15,7 +15,3 @@
 		zephyr,loaded-fw-dst = &cpurad_ram0;
 	};
 };
-
-
-
-

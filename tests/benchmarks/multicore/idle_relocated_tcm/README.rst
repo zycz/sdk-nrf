@@ -49,15 +49,34 @@ Additional Files
 
 The test comes with the following additional files:
 
-* :file:`sysbuild.cmake` - Adds additional images using the :c:macro:`ExternalZephyrProject_Add` macro
+* :file:`sysbuild.conf` - Enables the radio loader via ``CONFIG_NRF_RADIO_LOADER=y``
+* :file:`sysbuild.cmake` - Adds remote firmware using ``nrf_cpurad_image()`` helper for automatic relocation
 * :file:`boards/memory_map.overlay` - Shared memory map configuration for both loader and remote firmware
-* :file:`remote/CMakeLists.txt` - Contains automatic relocation logic for the remote firmware
+* :file:`sysbuild/radio_loader/` - Radio loader configuration overrides (prj.conf, overlay)
+* :file:`remote/CMakeLists.txt` - Standard application CMakeLists.txt (no relocation logic needed)
+
+Enabling the Radio Loader
+**************************
+
+The radio loader is automatically added to the build when you enable it in sysbuild configuration.
+
+In :file:`sysbuild.conf`:
+
+.. code-block:: kconfig
+
+   CONFIG_NRF_RADIO_LOADER=y
+
+This single configuration option:
+
+1. Automatically adds the ``radio_loader`` application from ``nrf/samples/radio_loader``
+2. Builds it for the CPURAD core
+3. No manual ``ExternalZephyrProject_Add()`` needed in sysbuild.cmake!
 
 Configuring the Radio Loader
 *****************************
 
 The radio loader is responsible for copying the remote firmware from MRAM to TCM and jumping to it. 
-To configure the radio loader, you need to define the memory map in devicetree overlays.
+You configure the memory map in devicetree overlays.
 
 Memory Map Configuration
 ========================
@@ -120,9 +139,9 @@ Each image (radio loader and remote firmware) requires specific ``chosen`` nodes
 
    /{
        chosen {
-           zephyr,code-partition = &cpurad_ram0;
-           zephyr,sram = &cpurad_data_ram;
-           fw-to-relocate = &cpurad_loaded_fw;  /* Used for automatic relocation */
+           // CONFIG_BUILD_OUTPUT_ADJUST_LMA automatically calculates LMA adjustment
+           zephyr,code-partition = &cpurad_loaded_fw;  // LMA: load from MRAM
+           zephyr,sram = &cpurad_ram0;                  // VMA: run from TCM
        };
    };
 
@@ -130,73 +149,131 @@ Automatic Firmware Relocation
 ******************************
 
 The remote firmware must be relocated to match the MRAM partition address where it will be stored.
-This is done automatically during the build process using a custom CMake configuration in :file:`remote/CMakeLists.txt`.
+This is done **completely automatically** by Zephyr's ``CONFIG_BUILD_OUTPUT_ADJUST_LMA`` feature when the devicetree chosen nodes are configured correctly.
 
 How It Works
 ============
 
-1. **Extract address from devicetree:**
-   
-   The build system reads the ``fw-to-relocate`` chosen node to find the target partition:
+Firmware relocation is handled automatically by Zephyr's build system using the ``CONFIG_BUILD_OUTPUT_ADJUST_LMA`` configuration option, which is configured in ``zephyr/soc/nordic/nrf54h/Kconfig.defconfig.nrf54h20_cpurad`` for all nRF54H20 CPURAD projects.
 
-   .. code-block:: cmake
+The configuration automatically detects the ``fw-to-relocate`` chosen node in your devicetree. If present, it calculates the LMA adjustment. If not, it falls back to standard behavior.
 
-      dt_chosen(loaded_fw_node PROPERTY "fw-to-relocate")
-      dt_reg_addr(partition_offset PATH ${loaded_fw_node})
+Simply configure the devicetree chosen nodes correctly in your firmware's overlay:
 
-2. **Calculate absolute address:**
-   
-   The partition offset is relative to the MRAM controller base address (0xe000000):
+.. code-block:: devicetree
 
-   .. code-block:: cmake
+   /{
+       chosen {
+           // LMA: where to load from (MRAM partition)
+           zephyr,code-partition = &cpurad_loaded_fw;
+           
+           // VMA: where to run (TCM)
+           zephyr,sram = &cpurad_ram0;
+       };
+   };
 
-      set(mram_base_addr "0xe000000")
-      math(EXPR reloc_addr "${mram_base_addr} + ${partition_offset}" OUTPUT_FORMAT HEXADECIMAL)
+Zephyr automatically calculates the Load Memory Address (LMA) adjustment based on your chosen nodes:
 
-3. **Create relocated binary:**
-   
-   After the build, ``objcopy`` relocates the binary and overwrites ``zephyr.hex``:
+**With fw-to-relocate chosen node** (for radio loader pattern):
 
-   .. code-block:: cmake
+.. code-block:: text
 
-      add_custom_command(
-          OUTPUT ${CMAKE_BINARY_DIR}/zephyr/zephyr_relocated.hex
-          COMMAND ${CMAKE_OBJCOPY} --input-target=binary --output-target=ihex 
-                  --change-addresses ${reloc_addr}
-                  ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin 
-                  ${CMAKE_BINARY_DIR}/zephyr/zephyr_relocated.hex
-          COMMAND ${CMAKE_COMMAND} -E copy 
-                  ${CMAKE_BINARY_DIR}/zephyr/zephyr_relocated.hex 
-                  ${CMAKE_BINARY_DIR}/zephyr/zephyr.hex
-          DEPENDS ${CMAKE_BINARY_DIR}/zephyr/zephyr.bin
-      )
+   LMA_adjustment = fw-to-relocate address - zephyr,code-partition address
+                  = cpurad_loaded_fw - cpurad_ram0
+                  = 0x0e0a9000 - 0x23000000
 
-The relocated hex file (``zephyr_relocated.hex``) is kept for reference, while ``zephyr.hex`` is overwritten to ensure standard flashing commands work without modification.
+**Without fw-to-relocate** (standard behavior):
+
+.. code-block:: text
+
+   LMA_adjustment = zephyr,code-partition address - zephyr,sram address
+
+The build system then adjusts the hex file so that the firmware:
+- Is **loaded from** MRAM (``0x0e0a9000``)
+- But **runs from** TCM (``0x23000000``)
+
+**No manual objcopy or CMake manipulation needed!** ✨
+
+Adding Remote Firmware in Sysbuild
+===================================
+
+Simply add the remote firmware in :file:`sysbuild.cmake`:
+
+.. code-block:: cmake
+
+   ExternalZephyrProject_Add(
+       APPLICATION remote
+       SOURCE_DIR ${APP_DIR}/remote
+       BOARD nrf54h20dk/nrf54h20/cpurad
+       BOARD_REVISION ${BOARD_REVISION}
+   )
+
+That's it! The relocation is **completely automatic** thanks to:
+
+1. ``CONFIG_BUILD_OUTPUT_ADJUST_LMA`` in the SoC defconfig
+2. ``fw-to-relocate`` chosen node in your devicetree overlay
+
+**No helper functions, no custom CMake, no manual configuration needed!**
 
 Adapting to Your Project
 =========================
 
-To use this relocation mechanism in your own project:
+To use the radio loader pattern in your own nRF54H20 CPURAD project:
 
-1. **Define memory map:**
+1. **Enable radio loader in sysbuild.conf:**
    
-   Create a :file:`memory_map.overlay` file with your partition layout.
+   Create :file:`sysbuild.conf` with:
 
-2. **Add chosen node:**
+   .. code-block:: kconfig
+
+      CONFIG_NRF_RADIO_LOADER=y
+
+2. **Define memory map:**
    
-   Add ``fw-to-relocate = &your_partition;`` to your remote firmware's overlay.
+   Create a devicetree overlay with your partition layout:
 
-3. **Copy CMake logic:**
+   .. code-block:: devicetree
+
+      &{/soc/mram@e000000/partitions} {
+          my_firmware: partition@a9000 {
+              reg = <0xa9000 0x20000>;
+          };
+      };
+
+3. **Configure chosen nodes:**
    
-   Add the relocation logic from :file:`remote/CMakeLists.txt` to your remote image's CMakeLists.txt.
+   Add the chosen nodes to your firmware's overlay:
 
-4. **Update MRAM base address:**
+   .. code-block:: devicetree
+
+      /{
+          chosen {
+              // VMA: where code runs
+              zephyr,code-partition = &my_tcm_region;  // TCM
+              zephyr,sram = &my_data_ram;              // Data RAM
+              
+              // LMA: where code is loaded from (enables relocation)
+              fw-to-relocate = &my_firmware;           // MRAM partition
+          };
+      };
+
+4. **Add remote firmware in sysbuild.cmake:**
    
-   If targeting a different SoC, update the hardcoded ``mram_base_addr`` value.
+   Simply add your firmware as an external project:
 
-.. note::
+   .. code-block:: cmake
 
-   The MRAM base address (0xe000000) is hardcoded for nRF54H20. If you're using a different SoC, update this value in the CMakeLists.txt.
+      ExternalZephyrProject_Add(
+          APPLICATION my_remote
+          SOURCE_DIR ${APP_DIR}/remote
+          BOARD nrf54h20dk/nrf54h20/cpurad
+      )
+
+That's it! **No changes needed in your firmware's CMakeLists.txt!** Everything happens automatically:
+
+* Radio loader is added via Kconfig (``CONFIG_NRF_RADIO_LOADER=y``)
+* Firmware relocation handled by ``CONFIG_BUILD_OUTPUT_ADJUST_LMA`` (configured in SoC defconfig)
+* Just add the ``fw-to-relocate`` chosen node in your devicetree overlay!
 
 Building and running
 ********************
@@ -211,13 +288,7 @@ Build the test for application and radio cores as follows:
 
    west build -p -b nrf54h20dk/nrf54h20/cpuapp -T benchmarks.multicore.idle.nrf54h20dk_cpuapp_cpurad .
 
-During the build, you will see messages indicating the relocation process:
-
-.. code-block:: console
-
-   -- MRAM base address (hardcoded): 0xe000000
-   -- Partition offset from DTS: 0xa9000
-   -- Relocation address: 0x0e0a9000
+The build will proceed normally. Firmware relocation happens automatically during the build process based on your devicetree configuration.
 
 .. include:: /includes/nRF54H20_erase_UICR.txt
 
