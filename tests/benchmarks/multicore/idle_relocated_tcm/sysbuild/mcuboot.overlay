@@ -1,0 +1,7 @@
+#include "../boards/memory_map.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};  

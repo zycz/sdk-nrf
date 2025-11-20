@@ -5,8 +5,20 @@
  */
 
 /*
- * Common memory map configuration for cpurad
+ * Common memory map configuration for cpurad with MCUboot support
  * Shared between remote firmware and radio_loader
+ *
+ * Memory Layout:
+ * ==============
+ * MRAM (cpurad_slot0_partition @ 0x0e092000, 328 KB):
+ *   [0x000 - 0x200]   MCUboot header (512 bytes)
+ *   [0x200 - 0x2200]  Radio_loader (8 KB allocated)
+ *   [0x2200 - 0x22200] Remote firmware (128 KB fixed)
+ *   [end - 0x200]     MCUboot trailer (512 bytes)
+ *
+ * TCM (Runtime):
+ *   cpurad_ram0 @ 0x23000000 (128 KB) - Code execution region
+ *   cpurad_data_ram @ 0x23020000 (64 KB) - Data region
  */
 
 /{
@@ -21,28 +33,216 @@
 	};
 };
 
-&cpurad_ram0 {
-	compatible = "mmio-sram";
-	/delete-property/ reg;
-	reg = < 0x23000000 0x20000 >;
-	ranges = < 0x0 0x23000000 0x20000 >;
-};
 
-&{/soc/mram@e000000/partitions} {
-	// Remove the old cpurad_slot0_partition definition
-	/delete-node/ cpurad_slot0_partition;
 
-	// Add new partition for loader
-	cpurad_loader_partition: partition@92000 {
-		label = "cpurad_loader_partition";
-		reg = <0x92000 DT_SIZE_K(92)>;
+// /delete-node/ &cpuapp_slot0_partition;
+
+
+
+// &{/soc/mram@e000000/partitions} {
+// 	slot0_partition: partition@40000 {
+// 		reg = <0x40000 DT_SIZE_K(656)>;
+// 	};
+
+// 	cpuapp_slot0_partition: partition@40800 {
+// 		label = "image-0";
+// 		reg = <0x40800 0x51800>; /* Originally 0x40000 0x52000 */
+// 	};
+
+	// /delete-node/ cpuapp_slot0_partition;
+	/* Shrink cpuapp_slot0_partition by 0x800 from the beginning to make space for mcuboot header */
+
+
+	/*
+	 * Use default cpurad_slot0_partition (defined in board DTS)
+	 * cpurad_slot0_partition: 0x92000, 328 KB
+	 * cpurad_slot1_partition: 0x152000, 328 KB (for DFU)
+	 *
+	 * Define logical regions within slot0 for build system reference
+	 */
+
+	// /* Radio_loader location in MRAM (after MCUboot header) */
+	// cpurad_loader_partition: partition@92200 {
+	// 	label = "cpurad_loader_partition";
+	// 	reg = <0x92200 DT_SIZE_K(8)>;  /* 8 KB allocated (~4 KB actual) */
+	// };
+
+	// /* Remote firmware location in MRAM (fixed size for memcpy) */
+	// cpurad_loaded_fw: partition@94200 {
+	// 	label = "cpurad_loaded_fw";
+	// 	reg = <0x94200 DT_SIZE_K(128)>;  /* 128 KB fixed */
+	// };
+// };
+
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+ &mram1x {
+	/delete-node/ partitions;
+
+	/* Redefine the "partitions" DTS node. */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuapp_boot_partition: boot_partition: partition@30000 {
+			reg = < 0x30000 0x10000 >;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@40000 {
+			reg = <0x40000 DT_SIZE_K(656)>;
+		};
+
+		cpuapp_slot0_partition: partition@40800 {
+			reg = <0x40800 DT_SIZE_K(326)>;
+			label = "image-0"; 
+		};
+
+		cpurad_slot0_partition_container: partition@92000 {
+			reg = <0x92000 DT_SIZE_K(328)>;
+		};
+
+		/* Radio_loader location in MRAM (after MCUboot header) */
+		cpurad_slot0_partition: cpurad_loader_partition: partition@92800 {
+			label = "cpurad_loader_partition";
+			reg = <0x92800 DT_SIZE_K(8)>;  /* 8 KB allocated (~4 KB actual) */
+		};
+
+		/* Remote firmware location in MRAM (fixed size for memcpy) */
+		cpurad_loaded_fw: partition@94800 {
+			label = "cpurad_loaded_fw";
+			reg = <0x94800 DT_SIZE_K(128)>;  /* 128 KB fixed */
+		};
+
+		cpuppr_code_partition: partition@e4000 {
+			reg = <0xe4000 DT_SIZE_K(64)>;
+		};
+
+		cpuflpr_code_partition: partition@f4000 {
+			reg = <0xf4000 DT_SIZE_K(48)>;
+		};
+
+		slot1_partition: partition@100000 {
+			reg = <0x100000 DT_SIZE_K(656)>;
+		};
+
+		cpuapp_slot1_partition: partition@100800 {
+			reg = <0x100800 DT_SIZE_K(326)>;
+		};
+
+		cpurad_slot1_partition: partition@152000 {
+			reg = <0x152000 DT_SIZE_K(328)>;
+		};
+
+		/* Radio_loader location in MRAM (after MCUboot header) */
+		cpurad_loader_partition_slot1: partition@152800 {
+			label = "cpurad_loader_partition_slot1";
+			reg = <0x152800 DT_SIZE_K(8)>;  /* 8 KB allocated (~4 KB actual) */
+		};
+
+		/* Remote firmware location in MRAM (fixed size for memcpy) */
+		cpurad_loaded_fw_slot1: partition@154800 {
+			label = "cpurad_loaded_fw_slot1";
+			reg = <0x154800 DT_SIZE_K(128)>;  /* 128 KB fixed */
+		};
+
+		storage_partition: partition@1a4000 {
+			reg = <0x1a4000 DT_SIZE_K(40)>;
+		};
+
+		periphconf_partition: partition@1ae000 {
+			reg = <0x1ae000 DT_SIZE_K(8)>;
+		};
+
+		secondary_partition: partition@1b0000 {
+			reg = <0x1b0000 DT_SIZE_K(64)>;
+		};
+
+		secondary_periphconf_partition: partition@1c0000 {
+			reg = <0x1c0000 DT_SIZE_K(8)>;
+		};
+
+		/* NB: A gap has been left here for future partitions */
+
+		/* 0x1fd000 was chosen for secure_storage_partition such that
+		 * there is no more space after secure_storage_partition.
+		 */
+		secure_storage_partition: partition@1fd000 {
+			compatible = "fixed-subpartitions";
+			reg = <0x1fd000 DT_SIZE_K(12)>;
+			ranges = <0x0 0x1fd000 0x3000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cpuapp_crypto_partition: partition@0 {
+				reg = <0x0 DT_SIZE_K(4)>;
+			};
+
+			cpurad_crypto_partition: partition@1000 {
+				reg = <0x1000 DT_SIZE_K(4)>;
+			};
+
+			cpuapp_its_partition: partition@2000 {
+				reg = <0x2000 DT_SIZE_K(2)>;
+			};
+
+			cpurad_its_partition: partition@2800 {
+				reg = <0x2800 DT_SIZE_K(2)>;
+			};
+		};
 	};
+ };
 
-	// Add new partition for loaded firmware
-	cpurad_loaded_fw: partition@a9000 {
-		label = "cpurad_loaded_fw";
-		// Size: 128KB (0x20000) for firmware image
-		reg = <0xa9000 0x20000>;
-	};
-};
+// 		/* Partitions belonging to the MRAM_10 memory block.
+// 		 * The start of the MRAM_10 memory is reserved for internal IronSide SE firmware.
+// 		 */
 
+// 		cpuapp_boot_partition: partition@30000 {
+// 			reg = <0x30000 DT_SIZE_K(24)>;
+// 		};
+
+// 		/* When using merged slots, the definition of MCUboot slots is common for all
+// 		 * images and points to the "merged" partition.
+// 		 */
+// 		slot0_partition: partition@36000 {
+// 			reg = <0x36000 DT_SIZE_K(808)>;
+// 		};
+
+// 		cpuapp_slot0_partition: partition@36800 {
+// 			reg = <0x36800 DT_SIZE_K(586)>;
+// 		};
+
+// 		cpurad_slot0_partition: partition@c9000 {
+// 			reg = <0xc9000 DT_SIZE_K(220)>;
+// 		};
+
+// 		/* Partitions belonging to the MRAM_11 memory block. */
+
+// 		slot1_partition: partition@100000 {
+// 			reg = <0x100000 DT_SIZE_K(808)>;
+// 		};
+
+// 		cpuapp_slot1_partition: partition@100800 {
+// 			reg = <0x100800 DT_SIZE_K(586)>;
+// 		};
+
+// 		cpurad_slot1_partition: partition@193000 {
+// 			reg = <0x193000 DT_SIZE_K(220)>;
+// 		};
+
+// 		storage_partition: partition@1ca000 {
+// 			reg = <0x1ca000 DT_SIZE_K(40)>;
+// 		};
+
+// 		periphconf_partition: partition@1d4000 {
+// 			reg = <0x1d4000 DT_SIZE_K(8)>;
+// 		};
+
+// 		/* The end of the MRAM_11 memory is left unallocated. */
+// 	};
+// };

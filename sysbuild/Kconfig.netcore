@@ -126,6 +126,11 @@ config NETCORE_IPC_RADIO_IEEE802154
 
 endif # NETCORE_IPC_RADIO
 
+config CUSTOM_RADIO
+	bool "Custom radio"
+	help
+	  Use custom radio.
+
 endchoice
 
 if !NETCORE_NONE
@@ -137,6 +142,7 @@ config NETCORE_IMAGE_NAME
 	default "rpc_host" if NETCORE_RPC_HOST
 	default "802154_rpmsg" if NETCORE_802154_RPMSG
 	default "ipc_radio" if NETCORE_IPC_RADIO
+	default "remote_rad" if CUSTOM_RADIO
 	help
 	  Name of netcore image.
 
@@ -147,6 +153,7 @@ config NETCORE_IMAGE_PATH
 	default "$(ZEPHYR_NRF_MODULE_DIR)/samples/bluetooth/rpc_host" if NETCORE_RPC_HOST
 	default "$(ZEPHYR_BASE)/samples/boards/nordic/ieee802154/802154_rpmsg" if NETCORE_802154_RPMSG
 	default "$(ZEPHYR_NRF_MODULE_DIR)/applications/ipc_radio" if NETCORE_IPC_RADIO
+	default "$(ZEPHYR_NRF_MODULE_DIR)/tests/benchmarks/multicore/idle_relocated_tcm/remote" if CUSTOM_RADIO
 	help
 	  Source directory of netcore image.
 

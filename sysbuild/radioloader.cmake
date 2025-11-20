@@ -19,6 +19,8 @@ if(SB_CONFIG_NRF_RADIO_LOADER)
 		BOARD_REVISION ${BOARD_REVISION}
 	)
 	
+
+	UpdateableImage_Add(APPLICATION radio_loader)
 	# Note: Memory map configuration should be provided by the user project
 	# in: sysbuild/radio_loader/boards/<board>.overlay
 	# This overlay should define partitions and chosen nodes for the loader

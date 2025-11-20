@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+// Include common memory map configuration
+#include "../../../boards/memory_map.overlay"
+
+
+// cpurad_ram0: sram@23000000 {
+// 	#address-cells = < 0x1 >;            /* in zephyr/dts/vendor/nordic/nrf54h20.dtsi:305 */
+// 	#size-cells = < 0x1 >;               /* in zephyr/dts/vendor/nordic/nrf54h20.dtsi:306 */
+// 	compatible = "mmio-sram";            /* in nrf/tests/benchmarks/multicore/idle_relocated_tcm/remote/boards/nrf54h20dk_nrf54h20_cpurad.overlay:19 */
+// 	reg = < 0x23000000 0x20000 >;        /* in nrf/tests/benchmarks/multicore/idle_relocated_tcm/remote/boards/nrf54h20dk_nrf54h20_cpurad.overlay:21 */
+// 	ranges = < 0x0 0x23000000 0x20000 >; /* in nrf/tests/benchmarks/multicore/idle_relocated_tcm/remote/boards/nrf54h20dk_nrf54h20_cpurad.overlay:22 */
+// };
+
+/{
+	chosen {
+		zephyr,code-partition = &cpurad_ram0;
+		zephyr,sram = &cpurad_data_ram;
+		fw-to-relocate = &cpurad_loaded_fw;
+	};
+};
+
+&cpurad_ram0 {
+	compatible = "mmio-sram";
+	/delete-property/ reg;
+	reg = < 0x23000000 0x20000 >;
+	ranges = < 0x0 0x23000000 0x20000 >;
+};
