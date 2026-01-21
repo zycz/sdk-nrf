@@ -10,23 +10,23 @@
 	};
 };
 
-&cpuflpr_sram {
-	cpuflpr_sram_code_data: sram@0 {
-		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_K(116)>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-	};
-};
+/ {
+	soc {
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpuflpr_code_partition: image@3e0000 {
+				/* FLPR core code partition */
+				reg = <0x3e0000 DT_SIZE_K(116)>;
+			};
+		};
 
-&cpuflpr_mram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		cpuflpr_code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_K(116)>;
+		cpuflpr_sram_code_data: memory@200e0000 {
+			compatible = "mmio-sram";
+			reg = <0x200e0000 DT_SIZE_K(116)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x200e0000 0x1d000>;
 		};
 	};
 };
