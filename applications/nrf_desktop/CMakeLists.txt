@@ -24,6 +24,10 @@ target_sources(app PRIVATE
   src/main.c
   ${CONFIG_DESKTOP_HID_REPORT_DESC}
   )
+
+if(CONFIG_SOC_NRF54H20_CPUAPP)
+  target_sources(app PRIVATE src/periphconf_l2cache.c)
+endif()
 # NORDIC SDK APP END
 
 # Include application events and configuration headers

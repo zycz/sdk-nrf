@@ -151,7 +151,7 @@ function(add_ironside_se_tlv_conf_validate_targets prefix images)
   if(input_file_args)
     sysbuild_get(IRONSIDE_SUPPORT_DIR IMAGE ${DEFAULT_IMAGE} VAR IRONSIDE_SUPPORT_DIR CACHE)
     set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
-      "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json"
+      "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.6.0+29.json"
     )
 
     set(periphconf_check_cmd
@@ -227,7 +227,7 @@ function(add_ironside_se_tlv_conf_validate_targets_merged
 
   sysbuild_get(IRONSIDE_SUPPORT_DIR IMAGE ${DEFAULT_IMAGE} VAR IRONSIDE_SUPPORT_DIR CACHE)
   set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
-    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json"
+    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.6.0+29.json"
   )
 
   # When signing merged binaries, the PERIPHCONF TLV is generated in Sysbuild based on
