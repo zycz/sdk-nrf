@@ -18,6 +18,18 @@
 LOG_MODULE_REGISTER(MODULE);
 
 
+static int test_shared_memory_dump(void)
+{
+	ipc_shared_memory_startup_dump("app");
+
+	return 0;
+}
+
+/* Runs before the proxy init (APP_PROXY_INIT_PRIO) so the shared memory is read
+ * before the IPC backend re-initializes it.
+ */
+SYS_INIT(test_shared_memory_dump, APPLICATION, CONFIG_APP_SYSTEM_INIT_PRIO);
+
 static int test_event_manager_proxy_init(void)
 {
 	int ret;

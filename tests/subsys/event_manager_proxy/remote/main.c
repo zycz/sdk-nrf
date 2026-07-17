@@ -27,6 +27,11 @@ int main(void)
 {
 	printk("Event Manager Proxy test remote_core started\n");
 
+	/* Read the shared memory before the IPC backend re-initializes it to show
+	 * that it still holds stale content from before the reset.
+	 */
+	ipc_shared_memory_startup_dump("remote");
+
 	int ret;
 	const struct device *ipc_instance  = REMOTE_IPC_DEV;
 

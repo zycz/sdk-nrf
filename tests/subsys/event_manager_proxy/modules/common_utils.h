@@ -20,6 +20,56 @@
  */
 #define REMOTE_IPC_DEV DEVICE_DT_GET(DT_NODELABEL(ipc0))
 
+/** @brief IPC instance node used by this test. */
+#define EMP_IPC_NODE DT_NODELABEL(ipc0)
+
+/**
+ * @brief Dump the IPC shared-memory regions as seen at startup.
+ *
+ * This reads the raw bytes of the tx/rx shared-memory regions (the area that
+ * holds the ICMsg indexes and the handshake "magic" bytes) BEFORE the IPC
+ * backend re-initializes them, then holds for one second.
+ *
+ * The purpose is purely diagnostic: it demonstrates that this shared memory is
+ * NOT cleared on reset - after a previous run the old indexes/magic are still
+ * present here.
+ *
+ * @param core_name Human readable name of the core doing the dump.
+ */
+static inline void ipc_shared_memory_startup_dump(const char *core_name)
+{
+#if DT_NODE_HAS_PROP(EMP_IPC_NODE, tx_region) && DT_NODE_HAS_PROP(EMP_IPC_NODE, rx_region)
+	const uintptr_t regions[] = {
+		DT_REG_ADDR(DT_PHANDLE(EMP_IPC_NODE, tx_region)),
+		DT_REG_ADDR(DT_PHANDLE(EMP_IPC_NODE, rx_region)),
+	};
+	static const char *const names[] = { "tx", "rx" };
+	/* Enough to cover rd_idx (+0x00), wr_idx (+0x20) and the magic area. */
+	const size_t dump_len = 64;
+
+	printk("\n[%s] IPC shared memory at startup (before backend init):\n", core_name);
+	for (size_t r = 0; r < ARRAY_SIZE(regions); r++) {
+		const volatile uint8_t *p = (const volatile uint8_t *)regions[r];
+
+		printk("  %s-region @ 0x%08lx:\n", names[r], (unsigned long)regions[r]);
+		for (size_t i = 0; i < dump_len; i += 16) {
+			printk("    +0x%02zx:", i);
+			for (size_t j = 0; j < 16; j++) {
+				printk(" %02x", p[i + j]);
+			}
+			printk("\n");
+		}
+	}
+	printk("[%s] holding 1 s so the (possibly stale) content can be observed...\n",
+	       core_name);
+	k_sleep(K_SECONDS(1));
+#else
+	ARG_UNUSED(core_name);
+	printk("[%s] ipc0 has no tx/rx region property, cannot dump shared memory\n",
+	       core_name);
+#endif
+}
+
 /**
  * @brief Auxiliary macro to subscribe to remote event.
  *
