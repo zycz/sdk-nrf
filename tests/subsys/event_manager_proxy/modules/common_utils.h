@@ -23,16 +23,30 @@
 /** @brief IPC instance node used by this test. */
 #define EMP_IPC_NODE DT_NODELABEL(ipc0)
 
+/** @brief Number of bytes captured/printed per shared-memory region. */
+#define EMP_SHMEM_DUMP_LEN 64
+
+/** @brief Delay before printing the captured snapshot, in seconds.
+ *
+ * The snapshot is taken immediately at startup, but printing is delayed so a
+ * serial terminal can be attached in time to capture it - in particular the
+ * very first boot after power-on, when the memory should still be clean.
+ */
+#define EMP_SHMEM_PRINT_DELAY_S 5
+
 /**
- * @brief Dump the IPC shared-memory regions as seen at startup.
+ * @brief Capture the IPC shared-memory regions at startup and print them later.
  *
- * This reads the raw bytes of the tx/rx shared-memory regions (the area that
- * holds the ICMsg indexes and the handshake "magic" bytes) BEFORE the IPC
- * backend re-initializes them, then holds for one second.
+ * The raw bytes of the tx/rx shared-memory regions (the area that holds the
+ * ICMsg indexes and the handshake "magic" bytes) are copied into a local
+ * buffer BEFORE the IPC backend re-initializes them. Printing is then delayed
+ * by @ref EMP_SHMEM_PRINT_DELAY_S seconds so the output can be captured even on
+ * the first boot after power-on.
  *
- * The purpose is purely diagnostic: it demonstrates that this shared memory is
- * NOT cleared on reset - after a previous run the old indexes/magic are still
- * present here.
+ * The purpose is purely diagnostic:
+ *  - on the first (cold) boot it shows the initial, clean memory,
+ *  - on any boot after a reset it shows that the memory is NOT cleared -
+ *    the old indexes/magic from the previous run are still present.
  *
  * @param core_name Human readable name of the core doing the dump.
  */
@@ -44,25 +58,36 @@ static inline void ipc_shared_memory_startup_dump(const char *core_name)
 		DT_REG_ADDR(DT_PHANDLE(EMP_IPC_NODE, rx_region)),
 	};
 	static const char *const names[] = { "tx", "rx" };
-	/* Enough to cover rd_idx (+0x00), wr_idx (+0x20) and the magic area. */
-	const size_t dump_len = 64;
+	static uint8_t snapshot[ARRAY_SIZE(regions)][EMP_SHMEM_DUMP_LEN];
 
-	printk("\n[%s] IPC shared memory at startup (before backend init):\n", core_name);
+	/* Snapshot the content as early as possible, before the IPC backend
+	 * re-initializes the shared memory.
+	 */
 	for (size_t r = 0; r < ARRAY_SIZE(regions); r++) {
 		const volatile uint8_t *p = (const volatile uint8_t *)regions[r];
 
+		for (size_t i = 0; i < EMP_SHMEM_DUMP_LEN; i++) {
+			snapshot[r][i] = p[i];
+		}
+	}
+
+	/* Delay so a serial terminal can be attached before the values are
+	 * printed (needed to catch the initial, clean values on a cold boot).
+	 */
+	k_sleep(K_SECONDS(EMP_SHMEM_PRINT_DELAY_S));
+
+	printk("\n[%s] IPC shared memory captured at startup (before backend init):\n",
+	       core_name);
+	for (size_t r = 0; r < ARRAY_SIZE(regions); r++) {
 		printk("  %s-region @ 0x%08lx:\n", names[r], (unsigned long)regions[r]);
-		for (size_t i = 0; i < dump_len; i += 16) {
+		for (size_t i = 0; i < EMP_SHMEM_DUMP_LEN; i += 16) {
 			printk("    +0x%02zx:", i);
 			for (size_t j = 0; j < 16; j++) {
-				printk(" %02x", p[i + j]);
+				printk(" %02x", snapshot[r][i + j]);
 			}
 			printk("\n");
 		}
 	}
-	printk("[%s] holding 1 s so the (possibly stale) content can be observed...\n",
-	       core_name);
-	k_sleep(K_SECONDS(1));
 #else
 	ARG_UNUSED(core_name);
 	printk("[%s] ipc0 has no tx/rx region property, cannot dump shared memory\n",

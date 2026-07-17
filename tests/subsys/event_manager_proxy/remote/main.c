@@ -27,8 +27,9 @@ int main(void)
 {
 	printk("Event Manager Proxy test remote_core started\n");
 
-	/* Read the shared memory before the IPC backend re-initializes it to show
-	 * that it still holds stale content from before the reset.
+	/* Snapshot the shared memory before the IPC backend re-initializes it,
+	 * then print it after a delay. On a cold boot this shows the clean
+	 * memory; after a reset it shows the stale content from the previous run.
 	 */
 	ipc_shared_memory_startup_dump("remote");
 
