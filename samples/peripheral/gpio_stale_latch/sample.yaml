@@ -1,0 +1,31 @@
+sample:
+  description: Demonstrates a GPIO callback reported after GPIO_INT_DISABLE
+  name: GPIO stale latch
+
+common:
+  tags:
+    - gpio
+  platform_allow:
+    - nrf54l15dk/nrf54l15/cpuapp
+  integration_platforms:
+    - nrf54l15dk/nrf54l15/cpuapp
+  harness: console
+  timeout: 30
+
+tests:
+  sample.peripheral.gpio_stale_latch:
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "control, kept enabled: valid callbacks: [1-9][0-9]*, stale callbacks: 0"
+        - "disabled before handling: valid callbacks: 0, stale callbacks: [1-9][0-9]*"
+  sample.peripheral.gpio_stale_latch.clear_latch:
+    extra_configs:
+      - CONFIG_SAMPLE_CLEAR_LATCH=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "control, kept enabled: valid callbacks: [1-9][0-9]*, stale callbacks: 0"
+        - "disabled before handling: valid callbacks: 0, stale callbacks: 0"

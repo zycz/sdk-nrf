@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "GPIO stale latch sample"
+
+config SAMPLE_CLEAR_LATCH
+	bool "Clear GPIO latch after disabling the pin interrupt"
+	help
+	  Apply the workaround: clear the pin LATCH bit right after
+	  gpio_pin_interrupt_configure(..., GPIO_INT_DISABLE). With this
+	  option enabled, no callback should be reported after disabling.
+
+config SAMPLE_SELF_TRIGGER_ITERATIONS
+	int "Number of self-triggered test iterations"
+	default 10
+
+config SAMPLE_BUTTON_WINDOW_MS
+	int "Button test window in milliseconds"
+	default 3000
+	help
+	  Time for which interrupts are masked while the button interrupt
+	  is still armed. Press the button within this window.
+
+endmenu
+
+source "Kconfig.zephyr"
